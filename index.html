@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>วิหารแก้ว วัดท่าซุง - Masterpiece Sketch Engine</title>
+    
+    <!-- 🧬 BODHI-PANYA ENGINE v9.0: PURE ARCHITECTURAL SKETCH -->
+    <meta name="engine-dna" content="Bodhi-Panya v9.0 Pure Sketch & Barrel Distortion">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #121212; color: #222; }
+        
+        /* กระดาษสเก็ตช์จริง มี Texture แบบกระดาษร้อยปอนด์ */
+        .sketch-paper {
+            background-color: #f7f6f0;
+            background-image: 
+                radial-gradient(#e0dcd0 1px, transparent 1px),
+                linear-gradient(to right, rgba(0,0,0,0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0,0,0,0.02) 1px, transparent 1px);
+            background-size: 20px 20px, 100px 100px, 100px 100px;
+            box-shadow: inset 0 0 60px rgba(180, 175, 160, 0.4), 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        /* สไตล์เส้นหมึกซึม */
+        .ink { 
+            fill: none; 
+            stroke: #1a1a1a; 
+            stroke-linecap: round; 
+            stroke-linejoin: round; 
+        }
+        
+        /* การซ้อนเส้น (Multi-pass overlay) เพื่อให้ดูเป็นมือวาด */
+        .ink-bold { stroke-width: 1.5; opacity: 0.9; }
+        .ink-medium { stroke-width: 1.0; opacity: 0.8; }
+        .ink-fine { stroke-width: 0.6; opacity: 0.6; }
+        .ink-hatch { stroke-width: 0.4; opacity: 0.5; stroke-dasharray: 2 4; }
+
+        /* ระบบ Interactive: โซนที่กดได้จะเปลี่ยนสีเมื่อชี้/แตะ */
+        .interactive-zone {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .interactive-zone:hover .ink,
+        .interactive-zone.active .ink {
+            stroke: #b48600; /* สีทองแดง/หมึกทอง */
+            filter: drop-shadow(0px 0px 2px rgba(180, 134, 0, 0.4));
+        }
+        
+        /* แอนิเมชันตอนเปลี่ยนข้อมูล */
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-4 md:p-8">
+
+    <header class="max-w-6xl mx-auto w-full flex justify-between items-center border-b border-zinc-800 pb-4 mb-6 text-white">
+        <div>
+            <span class="text-[10px] tracking-widest text-amber-500 font-bold uppercase">ARCHITECTURAL PURE SKETCH • WIDE LENS</span>
+            <h1 class="text-xl md:text-2xl font-bold">วิหารแก้ว วัดท่าซุง 100 เมตร</h1>
+        </div>
+        <div class="text-right">
+            <div class="text-xs text-zinc-400">Bodhi-Panya Engine v9.0</div>
+            <div class="text-[10px] text-amber-500">สัมปติจฉามิ</div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto w-full flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- ฝั่งซ้าย: Viewport กระดาษสเก็ตช์ (8 คอลัมน์) -->
+        <div class="lg:col-span-8 sketch-paper rounded-xl p-4 md:p-8 relative">
+            <div class="absolute top-4 left-6 text-[10px] text-zinc-500 font-bold tracking-widest uppercase">
+                Tap structural elements to inspect BIM data
+            </div>
+
+            <!-- SVG Viewport -->
+            <!-- สังเกตว่าเราใช้ filter="url(#handdrawn)" เพื่อบิดสมการเส้นตรงให้สั่นไหวเหมือนมือวาดจริง -->
+            <svg viewBox="0 0 1000 650" class="w-full h-auto mt-4 drop-shadow-sm">
+                
+                <defs>
+                    <!-- ฟิลเตอร์ระดับโลก: SVG Turbulence สมการคณิตศาสตร์สร้างความขรุขระให้เส้นหมึก -->
+                    <filter id="handdrawn" x="-10%" y="-10%" width="120%" height="120%">
+                        <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" result="noise"/>
+                        <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5" xChannelSelector="R" yChannelSelector="G"/>
+                    </filter>
+                </defs>
+
+                <!-- รวมงานสเก็ตช์ทั้งหมดไว้ใต้ Filter มือวาด -->
+                <g filter="url(#handdrawn)">
+                    
+                    <!-- เส้นนำสายตา และเส้นขอบฟ้า (Horizon / Perspective Guides) -->
+                    <path d="M 50 480 Q 500 500 950 480" class="ink ink-fine" stroke-dasharray="5 15" />
+                    <path d="M 500 50 L 500 600" class="ink ink-fine" stroke-dasharray="5 15" />
+
+                    <!-- ========================================== -->
+                    <!-- โซนที่ 1: ฐานอาคาร (Foundation) -->
+                    <!-- ใช้สมการโค้ง Q (Bezier) อ่อนๆ เพื่อสร้าง Barrel Distortion แบบเลนส์ Wide 14mm -->
+                    <g id="zone-foundation" class="interactive-zone" onclick="showBIM('foundation')">
+                        <path d="M 150 480 Q 500 510 850 480 L 920 550 Q 500 590 80 550 Z" class="ink ink-bold" />
+                        <path d="M 145 478 Q 500 508 855 478 L 925 552 Q 500 592 75 552 Z" class="ink ink-fine" /> <!-- เส้นตวัดซ้อนทับ -->
+                        <!-- เส้นแรเงาฐาน (Hatching) -->
+                        <path d="M 100 550 L 160 480 M 120 555 L 175 480 M 880 550 L 830 480 M 900 555 L 845 480" class="ink ink-medium" />
+                    </g>
+
+                    <!-- ========================================== -->
+                    <!-- โซนที่ 2: โครงสร้างเสาและผนัง (Superstructure / Pillars) -->
+                    <g id="zone-pillars" class="interactive-zone" onclick="showBIM('pillars')">
+                        <!-- กรอบอาคารหลักบิดโค้งนิดๆ ตามเลนส์ -->
+                        <path d="M 220 485 Q 500 515 780 485 L 750 280 Q 500 300 250 280 Z" class="ink ink-bold" />
+                        <path d="M 218 485 Q 500 513 782 485 L 752 278 Q 500 298 248 278 Z" class="ink ink-fine" />
+                        
+                        <!-- แนวเสาบีมแก้ว (คำนวณระยะห่าง Golden Ratio เข้าหาจุดกึ่งกลาง) -->
+                        <!-- เสาซ้ายไปขวา -->
+                        <path d="M 320 285 L 300 493 M 325 285 L 305 493" class="ink ink-medium" />
+                        <path d="M 390 290 L 380 498 M 393 290 L 383 498" class="ink ink-medium" />
+                        <path d="M 460 295 L 455 503 M 462 295 L 457 503" class="ink ink-medium" />
+                        <path d="M 540 295 L 545 503 M 538 295 L 543 503" class="ink ink-medium" />
+                        <path d="M 610 290 L 620 498 M 607 290 L 617 498" class="ink ink-medium" />
+                        <path d="M 680 285 L 700 493 M 675 285 L 695 493" class="ink ink-medium" />
+                        
+                        <!-- ช่องหน้าต่างโค้ง (Arch Windows) -->
+                        <path d="M 325 350 Q 355 330 385 350 L 375 450 L 315 450 Z" class="ink ink-fine" />
+                        <path d="M 400 350 Q 425 330 450 350 L 445 450 L 395 450 Z" class="ink ink-fine" />
+                        <path d="M 550 350 Q 575 330 600 350 L 605 450 L 555 450 Z" class="ink ink-fine" />
+                        <path d="M 615 350 Q 645 330 675 350 L 685 450 L 625 450 Z" class="ink ink-fine" />
+                    </g>
+
+                    <!-- ========================================== -->
+                    <!-- โซนที่ 3: หลังคาซ้อนชั้น (Roof Structure) -->
+                    <g id="zone-roof" class="interactive-zone" onclick="showBIM('roof')">
+                        <!-- ชั้นล่างสุด -->
+                        <path d="M 120 280 Q 500 340 880 280 L 500 160 Z" class="ink ink-bold" />
+                        <path d="M 120 285 Q 500 345 880 285" class="ink ink-medium" />
+                        <!-- ชั้นกลาง -->
+                        <path d="M 200 210 Q 500 260 800 210 L 500 110 Z" class="ink ink-bold" />
+                        <path d="M 200 215 Q 500 265 800 215" class="ink ink-medium" />
+                        <!-- ชั้นบนสุด -->
+                        <path d="M 280 150 Q 500 190 720 150 L 500 70 Z" class="ink ink-bold" />
+                        <path d="M 280 155 Q 500 195 720 155" class="ink ink-medium" />
+                        
+                        <!-- แรเงาใต้หลังคา (Cross Hatching) สร้างความลึก -->
+                        <path d="M 250 280 L 280 265 M 270 285 L 300 270 M 750 280 L 720 265 M 730 285 L 700 270" class="ink ink-hatch" />
+                        <path d="M 300 210 L 320 200 M 310 215 L 330 205 M 700 210 L 680 200 M 690 215 L 670 205" class="ink ink-hatch" />
+                    </g>
+
+                    <!-- ========================================== -->
+                    <!-- โซนที่ 4: ยอดฉัตร 7 ชั้น (The Chattra) -->
+                    <g id="zone-chattra" class="interactive-zone" onclick="showBIM('chattra')">
+                        <path d="M 500 70 L 500 10 M 498 70 L 498 10" class="ink ink-bold" />
+                        <!-- ชั้นฉัตรทั้ง 7 -->
+                        <path d="M 480 60 Q 500 65 520 60" class="ink ink-bold" />
+                        <path d="M 482 52 Q 500 57 518 52" class="ink ink-bold" />
+                        <path d="M 484 44 Q 500 49 516 44" class="ink ink-bold" />
+                        <path d="M 486 36 Q 500 41 514 36" class="ink ink-bold" />
+                        <path d="M 488 28 Q 500 33 512 28" class="ink ink-bold" />
+                        <path d="M 490 20 Q 500 25 510 20" class="ink ink-bold" />
+                        <path d="M 492 12 Q 500 17 508 12" class="ink ink-bold" />
+                        <!-- รัศมีเปล่งประกายเบาๆ -->
+                        <path d="M 500 0 L 500 -15 M 485 5 L 470 -5 M 515 5 L 530 -5" class="ink ink-fine" />
+                    </g>
+                    
+                    <!-- ต้นไม้และบรรยากาศ (Landscape Context) ช่วยเสริมสเกลสถาปัตยกรรม -->
+                    <path d="M 50 480 Q 70 420 100 450 Q 130 400 160 460" class="ink ink-fine" />
+                    <path d="M 950 480 Q 930 420 900 450 Q 870 400 840 460" class="ink ink-fine" />
+                    
+                </g>
+            </svg>
+            
+            <div class="mt-8 pt-4 border-t border-zinc-300 flex justify-between items-end">
+                <div>
+                    <div class="text-sm font-bold text-zinc-800">วิหารแก้ว 100 เมตร วัดท่าซุง (Wide-Angle Perspective)</div>
+                    <div class="text-[10px] text-zinc-500">Digital Ink & Mathematical Barrel Distortion by Chang Bird</div>
+                </div>
+                <div class="font-signature text-xl text-zinc-700 italic">ช่างเบิร์ด</div>
+            </div>
+        </div>
+
+        <!-- ฝั่งขวา: BIM Inspector Panel (4 คอลัมน์) -->
+        <div class="lg:col-span-4 space-y-6">
+            <div class="bg-zinc-900 rounded-xl p-6 md:p-8 shadow-2xl text-zinc-300 border border-zinc-700">
+                
+                <div class="border-b border-zinc-700 pb-4 mb-5">
+                    <span class="text-[10px] tracking-widest text-amber-500 font-bold uppercase">BIM Inspector Panel</span>
+                    <h2 id="info-title" class="text-xl font-bold text-white mt-2">แตะที่โครงสร้างอาคาร</h2>
+                </div>
+                
+                <div id="info-content" class="text-sm text-zinc-400 leading-relaxed min-h-[120px]">
+                    ใช้นิ้วแตะหรือนำเมาส์ไปชี้ที่ชิ้นส่วนต่างๆ ของภาพสเก็ตช์ (เช่น ฐานราก, แนวเสา, หลังคา, หรือยอดฉัตร) เพื่อดูรายละเอียดทางสถาปัตยกรรมและโครงสร้าง BIM ของวิหารแก้ว
+                </div>
+
+                <div class="mt-6 bg-zinc-800 p-4 rounded-lg text-xs border border-zinc-700 shadow-inner">
+                    <div class="font-bold text-amber-400 mb-2">💡 สถาปัตยกรรมระบบ:</div>
+                    <ul class="list-disc pl-4 space-y-1 text-zinc-400">
+                        <li>ใช้ <span class="text-white">SVG Turbulence Filter</span> จำลองลายเส้นสั่นไหวและน้ำหนักมือในการสเก็ตช์หมึกซึม</li>
+                        <li>ใช้ <span class="text-white">Bezier Curves</span> ดัดเปอร์สเปกติฟแบบ Wide-Angle Lens สมจริง ไม่หลอกตา</li>
+                        <li>ไร้ปุ่ม UI บดบังสายตา อินเทอร์แอคทีฟฝังตรงในเส้นเวกเตอร์ (BIM Hover Logic)</li>
+                    </ul>
+                </div>
+                
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // ข้อมูลสถาปัตยกรรม
+        const bimDatabase = {
+            foundation: {
+                title: "🧱 ฐานรากและพื้นวิหาร",
+                desc: "ฐานคอนกรีตเสริมเหล็กที่ออกแบบให้แผ่กว้างตามหลักเปอร์สเปกติฟ (Barrel Distortion) ดึงสายตาเข้าสู่ศูนย์กลาง รองรับน้ำหนักของโครงสร้างเหล็กและแก้วทั้งหมด"
+            },
+            pillars: {
+                title: "📐 โครงสร้างเสาและโถงแก้ว",
+                desc: "แนวเสาบีมที่จัดเรียงตามสัดส่วนทองคำ (Golden Ratio) บีบเข้าหากันตามหลักทัศนมิติ (Perspective) ภายในประดิษฐานพระพุทธรูปองค์ปฐม"
+            },
+            roof: {
+                title: "🏛️ หลังคาซ้อนชั้นทรงไทย",
+                desc: "หลังคาทรงไทยประยุกต์ 3 ชั้น ลดหลั่นอย่างงดงาม การใช้เส้นหมึกสเก็ตช์ซ้อนทับ (Multi-pass hatching) ช่วยเน้นเงาและความลึกของโครงสร้างใต้หลังคา"
+            },
+            chattra: {
+                title: "✨ ยอดฉัตร 7 ชั้น",
+                desc: "ศูนย์รวมความศรัทธา ออกแบบเส้นรัศมีเปล่งประกาย สัญลักษณ์แห่งความร่มเย็น จุดสูงสุดที่รับพลังงานและส่งต่อความสิริมงคล"
+            }
+        };
+
+        function showBIM(zoneId) {
+            // ล้าง active คลาสทั้งหมด
+            document.querySelectorAll('.interactive-zone').forEach(el => el.classList.remove('active'));
+            
+            // เพิ่ม active คลาสให้โซนที่คลิก
+            document.getElementById('zone-' + zoneId).classList.add('active');
+
+            // อัปเดตข้อมูลพร้อมแอนิเมชัน Fade
+            const titleEl = document.getElementById('info-title');
+            const contentEl = document.getElementById('info-content');
+            
+            // รีเซ็ตแอนิเมชัน
+            titleEl.classList.remove('fade-in');
+            contentEl.classList.remove('fade-in');
+            
+            // ใช้ setTimeout เล็กน้อยเพื่อให้ DOM จับการเปลี่ยนคลาส
+            setTimeout(() => {
+                titleEl.innerText = bimDatabase[zoneId].title;
+                contentEl.innerText = bimDatabase[zoneId].desc;
+                titleEl.classList.add('fade-in');
+                contentEl.classList.add('fade-in');
+            }, 10);
+        }
+    </script>
+</body>
+</html>
