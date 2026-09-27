@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bodhi-Panya v9.0 - Interactive Masterpiece</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #121212; color: #111; overflow: hidden; margin: 0; }
+        
+        #viewport {
+            width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center;
+            background-color: #f7f6f0;
+            background-image: radial-gradient(#d6cfbc 1px, transparent 1px);
+            background-size: 25px 25px;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.05);
+        }
+
+        canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+        
+        /* UI ข้อมูล BIM ลอยตัว */
+        .hud-overlay { position: absolute; top: 24px; left: 24px; pointer-events: none; }
+        
+        #bim-panel {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 253, 245, 0.95);
+            border-left: 4px solid #b47a18;
+            padding: 16px 24px; border-radius: 8px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            max-width: 90%; width: 400px;
+            transition: all 0.3s ease;
+            opacity: 0; pointer-events: none;
+            transform: translate(-50%, 20px);
+        }
+        #bim-panel.active { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+    </style>
+</head>
+<body>
+
+    <div id="viewport">
+        <div class="hud-overlay text-zinc-800">
+            <h1 class="text-xl md:text-2xl font-bold text-amber-700">⚙️ Bodhi-Panya v9.0</h1>
+            <p class="text-[10px] md:text-xs font-bold uppercase tracking-widest text-zinc-500">Interactive Solid BIM Sketch</p>
+            <div class="mt-2 text-xs text-zinc-600 bg-amber-100/50 p-2 rounded border border-amber-200 inline-block shadow-sm">
+                👆 แตะที่โครงสร้างเพื่อดูข้อมูล
+            </div>
+        </div>
+
+        <canvas id="engineCanvas"></canvas>
+        
+        <div id="bim-panel">
+            <h3 id="bim-title" class="text-lg font-bold text-zinc-900 mb-1">หัวข้อ</h3>
+            <p id="bim-desc" class="text-sm text-zinc-700 leading-relaxed font-serif italic">รายละเอียด</p>
+        </div>
+
+        <div class="absolute bottom-6 right-6 text-right pointer-events-none">
+            <div class="text-xl md:text-2xl font-bold text-zinc-800 font-serif italic drop-shadow-md">ช่างเบิร์ด</div>
+            <div class="text-[10px] md:text-xs font-bold text-amber-600 tracking-widest">สัมปติจฉามิ</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('engineCanvas');
+        const ctx = canvas.getContext('2d');
+        let camera = { scale: 1, offsetX: 0, offsetY: 0 };
+        let mouseX = -100, mouseY = -100;
+        let hoveredId = null;
+
+        // ข้อมูลเชิงลึก BIM
+        const bimDatabase = {
+            'foundation': { title: "🧱 ฐานรากวิหาร 100 เมตร", desc: "ฐานรากทึบตัน รับน้ำหนักโครงสร้างทั้งหมด พร้อมระบบแรเงา (Hatching) สร้างมิติความลึก" },
+            'roof': { title: "🏛️ หลังคาทรงไทยประยุกต์", desc: "หลังคาซ้อน 3 ชั้น อัลกอริทึมซ่อนเส้น (Painter's Algorithm) บังโครงสร้างภายในอย่างสมจริง" },
+            'pillars': { title: "📐 แนวเสาบีมแก้ว", desc: "โครงสร้างเสาคำนวณตามสัดส่วนทองคำ วางตัวอยู่ใต้ร่มเงาหลังคาอย่างแม่นยำ" },
+            'chattra': { title: "✨ ยอดฉัตร 7 ชั้น", desc: "จุดบรรจบของสถาปัตยกรรมและจิตวิญญาณ ทะยานขึ้นสู่จุดสูงสุดด้วยองศาที่เป๊ะทุกสัดส่วน" }
+        };
+
+        class Vector3 { constructor(x, y, z) { this.x = x; this.y = y; this.z = z; } }
+
+        // Polygon Class สำหรับระบบบังวัตถุและ Interactive
+        class Polygon {
+            constructor(id, vertices, type = 'solid') {
+                this.id = id;
+                this.vertices = vertices; // [Vector3]
+                this.type = type; // 'solid', 'line', 'hatch'
+                this.depth = this.calculateDepth();
+            }
+            calculateDepth() {
+                // หาความลึกเฉลี่ย (Z-Index) ยิ่งค่าน้อย (ลบเยอะ) ยิ่งอยู่ไกล
+                let sum = 0;
+                this.vertices.forEach(v => sum += (v.x + v.y + v.z));
+                return sum / this.vertices.length;
+            }
+        }
+
+        function getRaw2D(vec3) {
+            const angle = Math.PI / 6; 
+            const x2d = (vec3.x - vec3.z) * Math.cos(angle);
+            const y2d = vec3.y + (vec3.x + vec3.z) * Math.sin(angle);
+            return { x: x2d, y: -y2d };
+        }
+
+        function project(vec3) {
+            const raw = getRaw2D(vec3);
+            return { x: (raw.x * camera.scale) + camera.offsetX, y: (raw.y * camera.scale) + camera.offsetY };
+        }
+
+        // ==========================================
+        // 🚀 อัลกอริทึมสร้างโมเดลและจัดเรียงความลึก
+        // ==========================================
+        let renderQueue = [];
+        let allVertices = [];
+
+        function buildModel() {
+            renderQueue = []; allVertices = [];
+            const w = 140, d = 240, h = 15;
+
+            // 1. Foundation (ฐาน)
+            const fBottom = [new Vector3(-w,0,-d), new Vector3(w,0,-d), new Vector3(w,0,d), new Vector3(-w,0,d)];
+            const fTop = [new Vector3(-w,h,-d), new Vector3(w,h,-d), new Vector3(w,h,d), new Vector3(-w,h,d)];
+            allVertices.push(...fBottom, ...fTop);
+            
+            // สร้างแผ่นโพลีกอนฐานราก
+            renderQueue.push(new Polygon('foundation', fTop)); // แผ่นบน
+            renderQueue.push(new Polygon('foundation', [fBottom[0], fBottom[1], fTop[1], fTop[0]])); // แผ่นข้างหลัง
+            renderQueue.push(new Polygon('foundation', [fBottom[1], fBottom[2], fTop[2], fTop[1]])); // แผ่นข้างขวา
+            renderQueue.push(new Polygon('foundation', [fBottom[2], fBottom[3], fTop[3], fTop[2]])); // แผ่นหน้าซ้าย
+            renderQueue.push(new Polygon('foundation', [fBottom[3], fBottom[0], fTop[0], fTop[3]])); // แผ่นหน้าขวา
+
+            // 2. Pillars (เสา) 
+            const pHeight = 70, pInset = 20;
+            const zStep = (d * 2 - pInset * 2) / 5;
+            for(let i=0; i<=5; i++) {
+                const zPos = -d + pInset + (i * zStep);
+                const plBase = new Vector3(-w + pInset, h, zPos), plTop = new Vector3(-w + pInset, h + pHeight, zPos);
+                const prBase = new Vector3(w - pInset, h, zPos), prTop = new Vector3(w - pInset, h + pHeight, zPos);
+                allVertices.push(plBase, plTop, prBase, prTop);
+                renderQueue.push(new Polygon('pillars', [plBase, plTop], 'line'));
+                renderQueue.push(new Polygon('pillars', [prBase, prTop], 'line'));
+            }
+
+            // 3. Roofs (หลังคาทรงไทย) - แผ่นโพลีกอนทึบ
+            const rBaseY = h + pHeight;
+            const r1B = [new Vector3(-w-15, rBaseY, -d-15), new Vector3(w+15, rBaseY, -d-15), new Vector3(w+15, rBaseY, d+15), new Vector3(-w-15, rBaseY, d+15)];
+            const r1T = [new Vector3(-w*0.7, rBaseY+35, -d*0.7), new Vector3(w*0.7, rBaseY+35, -d*0.7), new Vector3(w*0.7, rBaseY+35, d*0.7), new Vector3(-w*0.7, rBaseY+35, d*0.7)];
+            const r2T = [new Vector3(-w*0.4, rBaseY+70, -d*0.4), new Vector3(w*0.4, rBaseY+70, -d*0.4), new Vector3(w*0.4, rBaseY+70, d*0.4), new Vector3(-w*0.4, rBaseY+70, d*0.4)];
+            const ridgeY = rBaseY + 110;
+            const r3T = [new Vector3(0, ridgeY, -d*0.2), new Vector3(0, ridgeY, -d*0.2), new Vector3(0, ridgeY, d*0.2), new Vector3(0, ridgeY, d*0.2)];
+
+            const roofTiers = [[r1B, r1T], [r1T, r2T], [r2T, r3T]];
+            roofTiers.forEach(tier => {
+                const [b, t] = tier;
+                allVertices.push(...b, ...t);
+                // ประกอบเป็น 4 แผ่นทึบต่อ 1 ชั้นหลังคา
+                renderQueue.push(new Polygon('roof', [b[0], b[1], t[1], t[0]])); // ด้านหลัง
+                renderQueue.push(new Polygon('roof', [b[1], b[2], t[2], t[1]])); // ด้านขวา
+                renderQueue.push(new Polygon('roof', [b[2], b[3], t[3], t[2]])); // ด้านหน้าขวา
+                renderQueue.push(new Polygon('roof', [b[3], b[0], t[0], t[3]])); // ด้านหน้าซ้าย
+            });
+
+            // 4. Chattra (ยอดฉัตร)
+            const cBaseY = ridgeY, cHeight = 90;
+            const cTop = new Vector3(0, cBaseY + cHeight, 0);
+            const cBot = new Vector3(0, cBaseY, 0);
+            allVertices.push(cBot, cTop);
+            renderQueue.push(new Polygon('chattra', [cBot, cTop], 'line'));
+            
+            for(let i=1; i<=7; i++) {
+                const tY = cBaseY + (i * 12), tW = 25 - (i * 2.5);
+                const p1 = new Vector3(-tW, tY, 0), p2 = new Vector3(tW, tY, 0);
+                allVertices.push(p1, p2);
+                renderQueue.push(new Polygon('chattra', [p1, p2], 'line'));
+            }
+
+            // จัดเรียงลำดับการวาดจากไกลมาใกล้ (Painter's Algorithm)
+            renderQueue.sort((a, b) => a.depth - b.depth);
+        }
+
+        // ==========================================
+        // ✒️ อัลกอริทึมวาดเส้นและ Interactive
+        // ==========================================
+        function drawSketchLine(p1, p2, isActive) {
+            ctx.beginPath();
+            const dx = p2.x - p1.x, dy = p2.y - p1.y;
+            const length = Math.sqrt(dx*dx + dy*dy);
+            if(length === 0) return;
+            
+            // Jitter & Overshoot
+            const over = (1 / length) * 4;
+            const sX = p1.x - (dx*over), sY = p1.y - (dy*over);
+            const eX = p2.x + (dx*over), eY = p2.y + (dy*over);
+
+            ctx.moveTo(sX, sY);
+            for (let i = 1; i <= 6; i++) {
+                const t = i / 6;
+                ctx.lineTo((sX + (eX - sX) * t) + (Math.random()-0.5), (sY + (eY - sY) * t) + (Math.random()-0.5));
+            }
+            
+            // สีเส้นสเก็ตช์ปกติ หรือ สีทองคำเมื่อโดนทัช
+            ctx.strokeStyle = isActive ? '#d97706' : '#222';
+            ctx.lineWidth = isActive ? 1.8 : 0.8;
+            ctx.stroke();
+
+            // รอยย้ำหมึก
+            if (Math.random() > 0.4) {
+                ctx.beginPath(); ctx.moveTo(sX, sY); ctx.lineTo(eX, eY);
+                ctx.strokeStyle = isActive ? 'rgba(217, 119, 6, 0.4)' : 'rgba(0,0,0,0.3)';
+                ctx.lineWidth = 0.5; ctx.stroke();
+            }
+        }
+
+        // ==========================================
+        // 🎥 Engine Core Render
+        // ==========================================
+        function renderScene() {
+            // Auto-Scale Camera
+            let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
+            allVertices.forEach(v => {
+                const raw = getRaw2D(v);
+                if (raw.x < minX) minX = raw.x; if (raw.x > maxX) maxX = raw.x;
+                if (raw.y < minY) minY = raw.y; if (raw.y > maxY) maxY = raw.y;
+            });
+            camera.scale = Math.min((canvas.width * 0.75) / (maxX-minX), (canvas.height * 0.7) / (maxY-minY));
+            camera.offsetX = (canvas.width / 2) - ((minX+maxX)/2 * camera.scale);
+            camera.offsetY = (canvas.height / 2) - ((minY+maxY)/2 * camera.scale) + (canvas.height * 0.1);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            hoveredId = null; // รีเซ็ตสถานะสัมผัส
+
+            // วาดโพลีกอนทีละชิ้นตามลำดับ Z-Depth (ไกล -> ใกล้)
+            for (let i = 0; i < renderQueue.length; i++) {
+                const poly = renderQueue[i];
+                const projPts = poly.vertices.map(project);
+                const isActive = (mouseX > 0 && poly.id === hoveredId) || false;
+
+                if (poly.type === 'solid' && projPts.length > 2) {
+                    // 1. สร้าง Path สำหรับเทสีและเช็ค Hitbox
+                    ctx.beginPath();
+                    ctx.moveTo(projPts[0].x, projPts[0].y);
+                    for(let j=1; j<projPts.length; j++) ctx.lineTo(projPts[j].x, projPts[j].y);
+                    ctx.closePath();
+
+                    // เช็คว่าเมาส์/นิ้ว ทับโพลีกอนนี้อยู่ไหม?
+                    if (ctx.isPointInPath(mouseX, mouseY)) {
+                        hoveredId = poly.id;
+                    }
+
+                    // 2. เทสีพื้นเพื่อบังวัตถุด้านหลัง (Painter's Algorithm)
+                    ctx.fillStyle = poly.id === hoveredId ? '#fff8e1' : '#f7f6f0';
+                    ctx.fill();
+
+                    // 3. วาดเส้นขอบสเก็ตช์
+                    for(let j=0; j<projPts.length; j++) {
+                        drawSketchLine(projPts[j], projPts[(j+1)%projPts.length], poly.id === hoveredId);
+                    }
+                } 
+                else if (poly.type === 'line') {
+                    // วาดเฉพาะเส้น (เช่น เสา หรือ ฉัตร)
+                    
+                    // เช็คระยะห่างเมาส์กับเส้น (Hitbox แบบรัศมีวงกลม)
+                    const p1 = projPts[0], p2 = projPts[1];
+                    const cx = (p1.x + p2.x)/2, cy = (p1.y + p2.y)/2;
+                    const dist = Math.sqrt(Math.pow(mouseX - cx, 2) + Math.pow(mouseY - cy, 2));
+                    if (dist < 40) hoveredId = poly.id;
+
+                    drawSketchLine(p1, p2, poly.id === hoveredId);
+                }
+            }
+
+            // อัปเดต UI เมื่อมีการสัมผัส/ชี้
+            const panel = document.getElementById('bim-panel');
+            if (hoveredId && bimDatabase[hoveredId]) {
+                document.getElementById('bim-title').innerText = bimDatabase[hoveredId].title;
+                document.getElementById('bim-desc').innerText = bimDatabase[hoveredId].desc;
+                panel.classList.add('active');
+                canvas.style.cursor = 'pointer';
+            } else {
+                panel.classList.remove('active');
+                canvas.style.cursor = 'crosshair';
+            }
+        }
+
+        // ==========================================
+        // 🖱️ Event Listeners (Mouse & Touch)
+        // ==========================================
+        function handleMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = (e.clientX || (e.touches && e.touches[0].clientX)) - rect.left;
+            mouseY = (e.clientY || (e.touches && e.touches[0].clientY)) - rect.top;
+            renderScene(); // รีเรนเดอร์ใหม่ทันทีที่ขยับเพื่ออัปเดตสี
+        }
+        
+        canvas.addEventListener('mousemove', handleMove);
+        canvas.addEventListener('touchstart', handleMove, {passive: true});
+        canvas.addEventListener('touchmove', handleMove, {passive: true});
+        
+        canvas.addEventListener('mouseleave', () => { mouseX = -100; mouseY = -100; renderScene(); });
+        canvas.addEventListener('touchend', () => { mouseX = -100; mouseY = -100; renderScene(); });
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            renderScene();
+        });
+
+        // Initialize
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        buildModel();
+        renderScene();
+
+    </script>
+</body>
+</html>
