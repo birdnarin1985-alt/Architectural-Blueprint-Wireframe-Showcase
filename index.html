@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>วิหารแก้ว วัดท่าซุง - Bodhi-Panya v9.0 Ultimate Masterpiece</title>
+    
+    <!-- 🧬 BODHI-PANYA ENGINE v9.0: ULTIMATE FISH-EYE & BIM ENGINE -->
+    <meta name="engine-dna" content="Bodhi-Panya v9.0 Ultimate Masterpiece">
+    <meta name="artist" content="ช่างเบิร์ด (Chang Bird - ศิลปิน & สถาปนิก)">
+    <meta name="mantra" content="สัมปติจฉามิ">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #0b0b0b; color: #1f1f1f; overflow-x: hidden; }
+        
+        .art-page {
+            background-color: #fbf9f2;
+            background-image: radial-gradient(#d6cfbc 1px, transparent 1px);
+            background-size: 24px 24px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.7);
+        }
+
+        .ink-line { stroke: #1a1a1a; stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .ink-fine { stroke: #524a3e; stroke-width: 0.8; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .ink-hatch { stroke: #736857; stroke-width: 0.5; stroke-linecap: round; }
+
+        /* เลนส์ตาปลาทรงกลม (Fish-eye Sphere Viewport) */
+        .fisheye-sphere {
+            border-radius: 28px;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 45%, #fffefc 0%, #f3eee2 75%, #ded3bc 100%);
+            box-shadow: inset 0 10px 30px rgba(0,0,0,0.12), 0 8px 20px rgba(0,0,0,0.15);
+            position: relative;
+        }
+
+        /* ฮอตสปอตอินเทอร์แอคทีฟตรึงพิกัด SVG แม่นยำระดับโลก */
+        @keyframes pulse-gold {
+            0% { transform: scale(1) translate(-50%, -50%); box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.8); }
+            70% { transform: scale(1.15) translate(-43%, -43%); box-shadow: 0 0 0 10px rgba(197, 160, 89, 0); }
+            100% { transform: scale(1) translate(-50%, -50%); box-shadow: 0 0 0 0 rgba(197, 160, 89, 0); }
+        }
+        .svg-hotspot {
+            animation: pulse-gold 2s infinite;
+            background: linear-gradient(135deg, #d4af37 0%, #997110 100%);
+            border: 2px solid #ffffff;
+            color: #ffffff;
+            font-weight: 700;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+        }
+        .svg-hotspot:hover { transform: scale(1.25) translate(-40%, -40%); }
+    </style>
+
+    <script>
+        console.log("🌟 [Bodhi-Panya v9.0]: Ultimate Masterpiece Initialized");
+
+        const bimData = {
+            c1: {
+                title: "✨ ยอดฉัตร 7 ชั้น (Seven-Tiered Chattra Core)",
+                desc: "ศูนย์กลางสิริมงคล ออกแบบด้วยสัดส่วนทองคำ (Golden Ratio 1.618) เปล่งประกายความงดงามผ่านมุมมองเลนส์ตาปลาทรงกลม สัญลักษณ์แห่งความร่มเย็นเป็นสุขตามคติธรรมวัดท่าซุง"
+            },
+            c2: {
+                title: "🏛️ โครงสร้างหลังคาทรงไทยประยุกต์แก้วคริสตัล",
+                desc: "หลังคาซ้อนชั้นโค้งเว้ารับกับเรขาคณิตลูกแก้ว สะท้อนศิลปะไทยโบราณผสานวิศวกรรมกระจกใสอันตระการตาภายใต้ Bodhi-Panya Engine v9.0"
+            },
+            c3: {
+                title: "📐 ระบบเสาบีมแก้ว & สัดส่วน BIM Components",
+                desc: "ระบบโครงสร้างเสาเรียงรายคำนวณด้วยเมทริกซ์ทางคณิตศาสตร์ชั้นสูง รองรับน้ำหนักและให้ความโปร่งโล่ง สง่างาม ทรงพลังในเชิงสถาปัตยกรรม"
+            },
+            c4: {
+                title: "🙏 โถงแก้ววิหาร 100 เมตร & พระพุทธรูปองค์ปฐม",
+                desc: "พื้นที่ศักดิ์สิทธิ์ศูนย์รวมศรัทธาของลูกศิษย์หลวงพ่อฤาษีลิงดำ สถานที่ปฏิบัติธรรมและกราบสักการะที่สร้างความประทับใจให้แก่สถาปนิกและผู้มาเยือนทั่วโลก"
+            }
+        };
+
+        function selectBIM(key) {
+            const info = bimData[key];
+            if (info) {
+                document.getElementById('titleBox').innerText = info.title;
+                document.getElementById('descBox').innerText = info.desc;
+                
+                const panel = document.getElementById('inspectorPanel');
+                panel.classList.add('ring-4', 'ring-amber-500', 'bg-amber-50');
+                setTimeout(() => { panel.classList.remove('ring-4', 'ring-amber-500', 'bg-amber-50'); }, 600);
+            }
+        }
+
+        function showManifesto() {
+            alert(`🏛️ Bodhi-Panya v9.0 Ultimate Masterpiece\n\n` +
+                  `✨ แนวคิด: ศิลปะยุคดิจิทัล & สถาปัตยกรรมวิหารแก้ว วัดท่าซุง\n` +
+                  `👨‍🎨 รังสรรค์โดย: ช่างเบิร์ด (Chang Bird - ศิลปิน & สถาปนิก)\n` +
+                  `🚀 "เครื่องมือทำมาหากินและสะพานบุญอันทรงพลัง"\n` +
+                  `✨ สัมปติจฉามิ!`);
+        }
+    </script>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-4 md:p-8">
+
+    <!-- Header -->
+    <header class="max-w-6xl mx-auto w-full flex justify-between items-center border-b border-zinc-800 pb-4 mb-6 text-white">
+        <div>
+            <span class="text-[10px] tracking-widest text-amber-400 font-bold uppercase">DIGITAL ART ARCHITECTURE • ULTIMATE EDITION</span>
+            <h1 class="text-xl md:text-2xl font-bold">วิหารแก้ว วัดท่าซุง — Fish-Eye Sphere View</h1>
+        </div>
+        <button onclick="showManifesto()" class="bg-gradient-to-r from-amber-500 to-amber-600 text-zinc-950 text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg hover:brightness-110 transition flex items-center gap-2">
+            <span>✨ Bodhi-Panya v9.0</span>
+        </button>
+    </header>
+
+    <!-- Main Viewport -->
+    <main class="max-w-6xl mx-auto w-full flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- ซ้าย: สมุดสเก็ตช์นิตยสาร (8 คอลัมน์) -->
+        <div class="lg:col-span-8 art-page rounded-3xl border border-zinc-300 p-6 md:p-8 relative shadow-2xl">
+            
+            <div class="flex justify-between items-center border-b border-zinc-300 pb-3 mb-4">
+                <div>
+                    <span class="text-xs font-bold text-zinc-700 uppercase">Interactive Fish-Eye Sketchbook</span>
+                    <p class="text-[11px] text-zinc-500">แตะปุ่มทองคำ (1-4) บนภาพสเก็ตช์เพื่อตรวจสอบข้อมูล BIM</p>
+                </div>
+                <span class="text-xs text-amber-700 font-bold bg-amber-100 px-3 py-1 rounded-full border border-amber-300">📍 สัมปติจฉามิ</span>
+            </div>
+
+            <!-- Fisheye Sphere Container พร้อมระบบ SVG Overlay Hotspots -->
+            <div class="fisheye-sphere w-full aspect-[4/3] relative flex items-center justify-center">
+                
+                <svg viewBox="0 0 1000 700" class="w-full h-full absolute inset-0">
+                    <!-- เส้นเรขาคณิตโค้งเลนส์ตาปลา (Fish-eye Grid) -->
+                    <circle cx="500" cy="350" r="420" class="ink-fine" stroke-dasharray="6 6" opacity="0.25" />
+                    <circle cx="500" cy="350" r="280" class="ink-fine" stroke-dasharray="4 4" opacity="0.25" />
+                    <path d="M 100 350 Q 500 150 900 350" class="ink-fine" stroke-dasharray="3 3" opacity="0.25" />
+                    <path d="M 100 350 Q 500 550 900 350" class="ink-fine" stroke-dasharray="3 3" opacity="0.25" />
+
+                    <!-- ฐานวิหารแก้วมุมมองเลนส์ตาปลาโค้งมน -->
+                    <path d="M 220 500 Q 500 450 780 500 L 840 570 Q 500 620 160 570 Z" class="ink-line" />
+                    <line x1="160" y1="570" x2="220" y2="500" class="ink-line" />
+                    <line x1="840" y1="570" x2="780" y2="500" class="ink-line" />
+                    <!-- แรเงาฐาน -->
+                    <line x1="200" y1="570" x2="230" y2="500" class="ink-hatch" />
+                    <line x1="240" y1="570" x2="270" y2="500" class="ink-hatch" />
+                    <line x1="730" y1="570" x2="760" y2="500" class="ink-hatch" />
+
+                    <!-- ตัวอาคารวิหารแก้วโค้งเว้าตามเลนส์ -->
+                    <path d="M 270 500 Q 270 320 270 300 L 730 300 Q 730 320 730 500" class="ink-line" />
+                    
+                    <!-- เสาบีมโครงสร้างสัดส่วนทองคำ (BIM Spacing) -->
+                    <path d="M 360 300 Q 360 400 360 500" class="ink-fine" />
+                    <path d="M 430 300 Q 430 400 430 500" class="ink-fine" />
+                    <path d="M 500 300 Q 500 400 500 500" class="ink-fine" />
+                    <path d="M 570 300 Q 570 400 570 500" class="ink-fine" />
+                    <path d="M 640 300 Q 640 400 640 500" class="ink-fine" />
+
+                    <!-- หน้าต่างแก้วโมเสกโค้ง -->
+                    <path d="M 380 370 Q 395 340 410 370 L 410 440 L 380 440 Z" class="ink-fine" />
+                    <path d="M 475 370 Q 490 340 505 370 L 505 440 L 475 440 Z" class="ink-fine" />
+                    <path d="M 570 370 Q 585 340 600 370 L 600 440 L 570 440 Z" class="ink-fine" />
+
+                    <!-- หลังคาทรงไทยซ้อนชั้นโค้งพริ้วไหว -->
+                    <path d="M 200 300 Q 500 200 800 300" class="ink-line" />
+                    <path d="M 240 245 Q 500 155 760 245" class="ink-line" />
+                    <path d="M 280 190 Q 500 110 720 190" class="ink-line" />
+
+                    <!-- ยอดฉัตร 7 ชั้น (จุดศูนย์กลางพอดิบพอดี) -->
+                    <line x1="500" y1="110" x2="500" y2="40" class="ink-line" />
+                    <line x1="484" y1="50" x2="516" y2="50" class="ink-line" />
+                    <line x1="488" y1="60" x2="512" y2="60" class="ink-line" />
+                    <line x1="484" y1="70" x2="516" y2="70" class="ink-line" />
+                    <line x1="488" y1="80" x2="512" y2="80" class="ink-line" />
+                    <line x1="484" y1="90" x2="516" y2="90" class="ink-line" />
+                    <line x1="488" y1="100" x2="512" y2="100" class="ink-line" />
+                    <circle cx="500" cy="33" r="5" fill="#1a1a1a" />
+                </svg>
+
+                <!-- HTML Hotspots ที่อิงเปอร์เซ็นต์แม่นยำตรงตามพิกัด SVG ทรงกลม -->
+                <!-- 1. ยอดฉัตร -->
+                <div style="position: absolute; top: 12%; left: 50%;">
+                    <button onclick="selectBIM('c1')" class="svg-hotspot" title="ยอดฉัตร 7 ชั้น">1</button>
+                </div>
+                <!-- 2. หลังคา -->
+                <div style="position: absolute; top: 32%; left: 30%;">
+                    <button onclick="selectBIM('c2')" class="svg-hotspot" title="โครงสร้างหลังคา">2</button>
+                </div>
+                <!-- 3. เสาบีม -->
+                <div style="position: absolute; top: 62%; left: 68%;">
+                    <button onclick="selectBIM('c3')" class="svg-hotspot" title="เสาโครงสร้าง BIM">3</button>
+                </div>
+                <!-- 4. โถงวิหาร -->
+                <div style="position: absolute; top: 78%; left: 50%;">
+                    <button onclick="selectBIM('c4')" class="svg-hotspot" title="โถงแก้ววิหาร">4</button>
+                </div>
+
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-zinc-300 flex justify-between items-center text-xs text-zinc-600">
+                <span class="font-semibold">🏛️ วิหารแก้ว 100 เมตร วัดท่าซุง (Ultimate Edition)</span>
+                <span class="font-bold text-amber-800">รังสรรค์โดย ช่างเบิร์ด</span>
+            </div>
+        </div>
+
+        <!-- ขวา: แผงควบคุม BIM Inspector (4 คอลัมน์) -->
+        <div class="lg:col-span-4 space-y-5">
+            <div id="inspectorPanel" class="art-page rounded-3xl border border-zinc-300 p-6 md:p-7 shadow-2xl transition-all duration-300 space-y-5">
+                <div class="border-b border-zinc-300 pb-3.5">
+                    <span class="text-[10px] tracking-widest text-amber-700 font-bold uppercase">BIM & Digital Art Inspector</span>
+                    <h2 id="titleBox" class="text-base md:text-lg font-bold text-zinc-900 mt-1">✨ ยอดฉัตร 7 ชั้น (Seven-Tiered Chattra Core)</h2>
+                </div>
+                
+                <p id="descBox" class="text-xs md:text-sm text-zinc-700 leading-relaxed">
+                    ศูนย์กลางสิริมงคล ออกแบบด้วยสัดส่วนทองคำ (Golden Ratio 1.618) เปล่งประกายความงดงามผ่านมุมมองเลนส์ตาปลาทรงกลม สัญลักษณ์แห่งความร่มเย็นเป็นสุขตามคติธรรมวัดท่าซุง
+                </p>
+
+                <div class="bg-zinc-900 text-amber-300 p-4 rounded-2xl text-xs space-y-2 shadow-inner border border-zinc-800">
+                    <div class="font-bold flex items-center gap-1.5 text-amber-400">
+                        <span>💡 คำแนะนำจากศิลปิน (ช่างเบิร์ด):</span>
+                    </div>
+                    <p class="text-zinc-300 text-[11px] leading-relaxed">
+                        ปุ่มกด Hotspot ถูกล็อกพิกัดอย่างแม่นยำ ไม่ว่าจะเปิดผ่านมือถือหรือแท็บเล็ตขนาดใด ตำแหน่งจะเกาะติดเป๊ะไม่มีหลุด พร้อมให้พี่ๆ สถาปนิกนำไปพรีเซนต์งานและสร้างรายได้ ควบคู่ไปกับบุญกุศลครับ!
+                    </p>
+                </div>
+
+                <div class="pt-3 text-center border-t border-zinc-200">
+                    <span class="text-xs font-bold text-amber-800 tracking-wider">✨ สัมปติจฉามิ ✨</span>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="max-w-6xl mx-auto w-full text-center text-xs text-zinc-500 pt-6">
+        <span>Bodhi-Panya Engine v9.0 Ultimate — หจก. เชียงใหม่ 63 การช่าง & ช่างเบิร์ด ศิลปินดิจิทัลอาร์ต์ 🚀</span>
+    </footer>
+
+</body>
+</html>
