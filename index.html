@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bodhi-Panya v9.0 - Masterpiece Stabilized</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ล็อกไม่ให้หน้าจอ Scroll หรือ Zoom ด้วยนิ้ว (Pull-to-refresh) */
+        body { font-family: 'Sarabun', sans-serif; background-color: #1a1a1a; margin: 0; overflow: hidden; touch-action: none; }
+        #viewport {
+            width: 100vw; height: 100vh; position: relative;
+            background-color: #f7f6f0;
+            background-image: radial-gradient(#d6cfbc 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+        
+        #bim-panel {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: rgba(255, 253, 245, 0.95); border-left: 4px solid #b47a18;
+            padding: 16px 24px; border-radius: 8px; box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            max-width: 90%; width: 400px; opacity: 0; pointer-events: none; transition: all 0.3s ease;
+        }
+        #bim-panel.active { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+    </style>
+</head>
+<body>
+
+    <div id="viewport">
+        <div class="absolute top-5 left-5 pointer-events-none">
+            <h1 class="text-xl font-bold text-amber-700">⚙️ Bodhi-Panya v9.0</h1>
+            <p class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Stabilized BIM Engine</p>
+        </div>
+        
+        <canvas id="engineCanvas"></canvas>
+
+        <div id="bim-panel">
+            <h3 id="bim-title" class="text-lg font-bold text-zinc-900 mb-1">หัวข้อ</h3>
+            <p id="bim-desc" class="text-sm text-zinc-700 leading-relaxed font-serif italic">รายละเอียด</p>
+        </div>
+
+        <div class="absolute bottom-6 right-6 text-right pointer-events-none">
+            <div class="text-xl font-bold text-zinc-800 font-serif italic">ช่างเบิร์ด</div>
+            <div class="text-[10px] font-bold text-amber-600 tracking-widest">สัมปติจฉามิ</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('engineCanvas');
+        const ctx = canvas.getContext('2d');
+        let camera = { scale: 1, offsetX: 0, offsetY: 0 };
+        let globalBIMArray = []; 
+        let brushLibrary = {}; 
+        
+        let inputState = { mouseX: -100, mouseY: -100, hoveredId: null };
+        
+        const bimDatabase = {
+            'foundation': { title: "🧱 ฐานรากวิหาร 100 เมตร", desc: "ฐานรากทึบตัน รับน้ำหนักโครงสร้างทั้งหมด พร้อมระบบแรเงาตั้ง (Vertical Hatching)" },
+            'roof': { title: "🏛️ หลังคาทรงไทยประยุกต์", desc: "ใช้แปรงฝนดินสอเฉียง (Diagonal Pattern) สาดลงบนอาร์เรย์ 3 มิติปั้งเดียวจบ" },
+            'pillar': { title: "📐 แนวเสาบีมแก้ว", desc: "แนวเสาเรียงตามสัดส่วนทองคำ เรนเดอร์ด้วยความลึกแบบ Global Z-Depth" },
+            'chattra': { title: "✨ ยอดฉัตร 7 ชั้น", desc: "ศูนย์รวมความศรัทธา ประกอบขึ้นด้วยสมการคณิตศาสตร์ล้วนๆ" }
+        };
+
+        class Vector3 { constructor(x, y, z) { this.x = x; this.y = y; this.z = z; } }
+
+        function initBrushes() {
+            const createBrush = (name, type, size, color, lw) => {
+                const osc = document.createElement('canvas'); osc.width = size; osc.height = size;
+                const oCtx = osc.getContext('2d'); oCtx.strokeStyle = color; oCtx.lineWidth = lw; oCtx.beginPath();
+                if(type==='diag') { oCtx.moveTo(0,size); oCtx.lineTo(size,0); }
+                else if(type==='vert') { oCtx.moveTo(size/2,0); oCtx.lineTo(size/2,size); }
+                else if(type==='cross') { oCtx.moveTo(0,0); oCtx.lineTo(size,size); oCtx.moveTo(0,size); oCtx.lineTo(size,0); }
+                oCtx.stroke(); brushLibrary[name] = ctx.createPattern(osc, 'repeat');
+            };
+            createBrush('roofHatch', 'diag', 12, 'rgba(100, 90, 80, 0.4)', 0.8);
+            createBrush('baseHatch', 'vert', 8, 'rgba(0, 0, 0, 0.2)', 1);
+            createBrush('shadow', 'cross', 10, 'rgba(50, 50, 50, 0.3)', 0.5);
+            brushLibrary['solid'] = '#f7f6f0';
+        }
+
+        // 🛠️ แก้ไขที่ 1: แยกฟังก์ชันคำนวณพิกัดดิบ 2D ออกมา (ไม่คูณสเกลกล้อง)
+        function getRaw2D(vec3) {
+            const angle = Math.PI / 6; 
+            const x2d = (vec3.x - vec3.z) * Math.cos(angle);
+            const y2d = vec3.y + (vec3.x + vec3.z) * Math.sin(angle);
+            return { x: x2d, y: -y2d };
+        }
+
+        // ฟังก์ชัน Project สำหรับตอนวาด (คูณสเกลกล้องแล้ว)
+        function project(vec3) {
+            const raw = getRaw2D(vec3);
+            return { 
+                x: (raw.x * camera.scale) + camera.offsetX, 
+                y: (raw.y * camera.scale) + camera.offsetY 
+            };
+        }
+
+        function buildGlobalArray() {
+            globalBIMArray = [];
+            const addPoly = (id, vertices, fill, stroke, width, jitter) => {
+                globalBIMArray.push({ id, vertices, style: { fill, stroke, width, jitter }, zDepth: 0 });
+            };
+
+            const w = 120, d = 200, h = 15;
+            const fB = [new Vector3(-w,0,-d), new Vector3(w,0,-d), new Vector3(w,0,d), new Vector3(-w,0,d)];
+            const fT = [new Vector3(-w,h,-d), new Vector3(w,h,-d), new Vector3(w,h,d), new Vector3(-w,h,d)];
+            addPoly('foundation', fT, 'solid', '#222', 1.5, 3);
+            [0,1,2,3].forEach(i => addPoly('foundation', [fB[i], fB[(i+1)%4], fT[(i+1)%4], fT[i]], 'baseHatch', '#333', 1, 2));
+
+            for(let i=0; i<=4; i++) {
+                const zP = -d + 15 + (i * ((d*2 - 30)/4));
+                addPoly('pillar', [new Vector3(-w+15, h, zP), new Vector3(-w+15, h+60, zP)], null, '#555', 1, 1);
+                addPoly('pillar', [new Vector3(w-15, h, zP), new Vector3(w-15, h+60, zP)], null, '#555', 1, 1);
+            }
+
+            const rB = h+60;
+            const r1B = [new Vector3(-w-15,rB,-d-15), new Vector3(w+15,rB,-d-15), new Vector3(w+15,rB,d+15), new Vector3(-w-15,rB,d+15)];
+            const
